@@ -46,32 +46,40 @@ module CASClient
     # If a logout_url has not been explicitly configured,
     # the default is cas_base_url + "/logout".
     #
-    # destination_url:: Set this if you want the user to be
+    # Options are
+    #   :destination
+    #   :service
+    #   :follow
+    #
+    # destination:: Set this if you want the user to be
     #                   able to immediately log back in. Generally
     #                   you'll want to use something like <tt>request.referer</tt>.
     #                   Note that the above behaviour describes RubyCAS-Server 
     #                   -- other CAS server implementations might use this
     #                   parameter differently (or not at all).
-    # follow_url:: This satisfies section 2.3.1 of the CAS protocol spec.
-    #              See http://www.ja-sig.org/products/cas/overview/protocol
-    def logout_url(destination_url = nil, follow_url = nil)
+    # follow:: This satisfies section 2.3.1 of the CAS protocol spec.
+    #          See http://www.ja-sig.org/products/cas/overview/protocol
+    def logout_url(options = {})
       url = @logout_url || (cas_base_url + "/logout")
-      
-      if destination_url
-        # if present, remove the 'ticket' parameter from the destination_url
-        duri = URI.parse(destination_url)
-        h = duri.query ? query_to_hash(duri.query) : {}
-        h.delete('ticket')
-        duri.query = hash_to_query(h)
-        destination_url = duri.to_s.gsub(/\?$/, '')
+
+      if options[:destination]
+        # if present, remove any 'ticket' parameter from the destination
+        uri   = URI.parse(options[:destination])
+        query = uri.query ? query_to_hash(uri.query) : {}
+        query.delete('ticket')
+        uri.query = hash_to_query(query)
+        options[:destination] = uri.to_s.gsub(/\?$/, '')
       end
       
-      if destination_url || follow_url
-        uri = URI.parse(url)
-        h = uri.query ? query_to_hash(uri.query) : {}
-        h['destination'] = destination_url if destination_url
-        h['url'] = follow_url if follow_url
-        uri.query = hash_to_query(h)
+      if options[:destination] || options[:follow] || options[:service]
+        uri   = URI.parse(url)
+        query = uri.query ? query_to_hash(uri.query) : {}
+
+        query['url']         = options[:follow]      if options[:follow]
+        query['service']     = options[:service]     if options[:service]
+        query['destination'] = options[:destination] if options[:destination]
+
+        uri.query = hash_to_query(query)
         uri.to_s
       else
         url

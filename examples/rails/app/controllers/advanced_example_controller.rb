@@ -24,8 +24,15 @@ class AdvancedExampleController < ApplicationController
     @extra_attributes = session[:cas_extra_attributes]
   end
 
+  # Logout then redirect the user to home_url
   def logout
-    CASClient::Frameworks::Rails::Filter.logout(self)
+    CASClient::Frameworks::Rails::Filter.logout(self, :follow => home_url)
+  end
+
+protected
+
+  def home_url
+    raise "You need to define a named route called home, or replace home_url with something more relevant"
   end
 
 end
